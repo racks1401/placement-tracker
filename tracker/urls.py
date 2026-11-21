@@ -1,7 +1,8 @@
 from django.urls import path
+from . import views
 
 app_name = 'tracker'
 
 urlpatterns = [
-    # Scaffolding: Dashboard and application routes will be wired in upcoming steps
+    path('', views.dashboard_view, name='dashboard'),
 ]
