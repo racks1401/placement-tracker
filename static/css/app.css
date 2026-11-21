@@ -14,6 +14,8 @@
     --danger-light: #fef2f2;
     --info: #0284c7;
     --info-light: #f0f9ff;
+    --purple: #7c3aed;
+    --purple-light: #f5f3ff;
 
     --bg-body: #f8fafc;
     --bg-surface: #ffffff;
@@ -161,6 +163,15 @@ body {
     margin-top: 1.5rem;
 }
 
+.mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.py-4 {
+    padding-top: 1.5rem;
+    padding-bottom: 1.5rem;
+}
+
 .py-5 {
     padding-top: 2.5rem;
     padding-bottom: 2.5rem;
@@ -219,7 +230,7 @@ body {
 }
 
 .card-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.15rem;
     font-weight: 600;
 }
 
@@ -372,39 +383,194 @@ body {
 /* Stats Grid */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
 }
 
 .stat-card {
     background-color: var(--bg-surface);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 1.5rem;
+    padding: 1.25rem;
     box-shadow: var(--shadow-sm);
 }
 
 .stat-label {
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    font-weight: 500;
+    font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .stat-value {
-    font-size: 2.25rem;
+    font-size: 1.85rem;
     font-weight: 700;
     color: var(--primary);
-    line-height: 1;
-    margin-bottom: 0.35rem;
+    line-height: 1.1;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value.stat-success {
+    color: var(--success);
+}
+
+.stat-value.stat-warning {
+    color: var(--warning);
 }
 
 .stat-subtext {
-    font-size: 0.825rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
+}
+
+/* Pipeline Stage Breakdown Pills */
+.stage-pills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.stage-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.625rem 0.875rem;
+    background-color: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+}
+
+.stage-name {
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.stage-badge {
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background-color: #e2e8f0;
+    color: #475569;
+}
+
+.stage-badge-offer {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.stage-badge-oa, .stage-badge-technical, .stage-badge-hr {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.stage-badge-rejected {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+.stage-badge-applied {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+/* Dashboard Columns */
+.dashboard-columns {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+@media (min-width: 900px) {
+    .dashboard-columns {
+        flex-direction: row;
+    }
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+/* Tables */
+.table-responsive {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.data-table th {
+    background-color: var(--bg-body);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+}
+
+.badge-info {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+.badge-saved {
+    background-color: #f1f5f9;
+    color: #475569;
+}
+
+.badge-applied {
+    background-color: var(--info-light);
+    color: var(--info);
+}
+
+.badge-oa, .badge-technical, .badge-hr {
+    background-color: var(--primary-light);
+    color: var(--primary);
+}
+
+.badge-offer {
+    background-color: var(--success-light);
+    color: var(--success);
+}
+
+.badge-rejected {
+    background-color: var(--danger-light);
+    color: var(--danger);
+}
+
+.badge-withdrawn {
+    background-color: #f3f4f6;
+    color: #6b7280;
 }
 
 /* Footer */

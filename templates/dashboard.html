@@ -7,32 +7,136 @@
     <div class="page-header">
         <div>
             <h1>Dashboard</h1>
-            <p class="text-muted">Welcome back, <strong>{{ user.get_full_name|default:user.username }}</strong>! Managing recruitment pipeline strictly for your tenant account.</p>
+            <p class="text-muted">Welcome, <strong>{{ user.get_full_name|default:user.username }}</strong>! Your personal recruitment pipeline overview.</p>
         </div>
     </div>
 
+    <!-- Key Metrics Grid -->
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-label">Total Applications</div>
             <div class="stat-value">{{ total_applications }}</div>
-            <div class="stat-subtext">Active & archived job leads</div>
+            <div class="stat-subtext">All submitted & saved roles</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Pipeline</div>
+            <div class="stat-value">{{ active_applications_count }}</div>
+            <div class="stat-subtext">Applied, OA, Technical, HR</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Offers Received</div>
+            <div class="stat-value stat-success">{{ offers_count }}</div>
+            <div class="stat-subtext">Secured offers</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Upcoming Interviews</div>
+            <div class="stat-value stat-warning">{{ upcoming_interviews_count }}</div>
+            <div class="stat-subtext">Next 7 days schedule</div>
         </div>
         <div class="stat-card">
             <div class="stat-label">Target Companies</div>
             <div class="stat-value">{{ total_companies }}</div>
-            <div class="stat-subtext">Scoped to your account</div>
+            <div class="stat-subtext">Tracked organizations</div>
         </div>
         <div class="stat-card">
-            <div class="stat-label">Resume Profiles</div>
-            <div class="stat-value">{{ total_resumes }}</div>
-            <div class="stat-subtext">Tailored versions registered</div>
+            <div class="stat-label">Avg Expected CTC</div>
+            <div class="stat-value">{% if avg_expected_ctc %}₹{{ avg_expected_ctc }} LPA{% else %}—{% endif %}</div>
+            <div class="stat-subtext">{% if max_expected_ctc %}Max: ₹{{ max_expected_ctc }} LPA{% else %}No CTC specified{% endif %}</div>
         </div>
     </div>
 
-    <div class="card mt-4">
-        <div class="card-body text-center py-5">
-            <h3>Pipeline Scaffolding Ready</h3>
-            <p class="text-muted">Authentication and strict per-user tenant isolation verified. Core service layer and full application views will be wired in Steps 4 and 5.</p>
+    <!-- Pipeline Stage Breakdown -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>Pipeline Stages</h2>
+        </div>
+        <div class="card-body">
+            <div class="stage-pills-grid">
+                {% for stage_name, count in status_counts.items %}
+                    <div class="stage-pill">
+                        <span class="stage-name">{{ stage_name }}</span>
+                        <span class="stage-badge stage-badge-{{ stage_name|lower }}">{{ count }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-columns">
+        <!-- Upcoming Interviews (Next 7 Days) -->
+        <div class="card flex-1">
+            <div class="card-header">
+                <h2>Upcoming Interviews (Next 7 Days)</h2>
+            </div>
+            <div class="card-body">
+                {% if upcoming_interviews %}
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Role</th>
+                                    <th>Round</th>
+                                    <th>Scheduled At (UTC)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for round in upcoming_interviews %}
+                                    <tr>
+                                        <td><strong>{{ round.application.company.name }}</strong></td>
+                                        <td>{{ round.application.role_title }}</td>
+                                        <td>
+                                            <span class="badge badge-info">
+                                                Round {{ round.round_number }}: {{ round.get_round_type_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ round.scheduled_at|date:"M d, Y H:i" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">No interviews scheduled in the next 7 days.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Applications -->
+        <div class="card flex-1">
+            <div class="card-header">
+                <h2>Recent Applications</h2>
+            </div>
+            <div class="card-body">
+                {% if recent_applications %}
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Company</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Work Mode</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for app in recent_applications %}
+                                    <tr>
+                                        <td><strong>{{ app.company.name }}</strong></td>
+                                        <td>{{ app.role_title }}</td>
+                                        <td>
+                                            <span class="badge badge-{{ app.status|lower }}">{{ app.status }}</span>
+                                        </td>
+                                        <td>{{ app.get_work_mode_display }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">No applications logged yet. They will appear here once added.</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
