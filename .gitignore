@@ -1,0 +1,42 @@
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# SQLite Database
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+
+# Media and uploaded files
+media/
+
+# Testing and coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE and Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Static collected files (optional in dev, but good practice)
+staticfiles/
