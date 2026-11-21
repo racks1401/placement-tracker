@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ application.role_title }} at {{ application.company.name }} - PlacementTracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="mb-3">
+        <a href="{% url 'tracker:application_list' %}" class="back-link">&larr; Back to Applications</a>
+    </div>
+
+    <!-- Application Header -->
+    <div class="page-header">
+        <div>
+            <div class="d-flex align-center gap-2 mb-1">
+                <h1>{{ application.role_title }}</h1>
+                <span class="badge badge-{{ application.status|lower }} badge-lg">{{ application.status }}</span>
+            </div>
+            <p class="text-muted font-medium">
+                <strong>{{ application.company.name }}</strong>
+                {% if application.location %} &bull; {{ application.location }}{% endif %}
+                {% if application.work_mode %} &bull; {{ application.get_work_mode_display }}{% endif %}
+            </p>
+        </div>
+        <div class="action-buttons">
+            <a href="{% url 'tracker:application_update' pk=application.pk %}" class="btn btn-secondary">Edit Application</a>
+            <a href="{% url 'tracker:application_delete' pk=application.pk %}" class="btn btn-danger-outline">Delete</a>
+        </div>
+    </div>
+
+    <!-- Overview Metadata Cards -->
+    <div class="stats-grid mb-4">
+        <div class="stat-card">
+            <div class="stat-label">Source</div>
+            <div class="stat-value font-base">{{ application.source }}</div>
+            <div class="stat-subtext">Application channel</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Expected CTC</div>
+            <div class="stat-value font-base">
+                {% if application.expected_ctc_lpa %}₹{{ application.expected_ctc_lpa }} LPA{% else %}—{% endif %}
+            </div>
+            <div class="stat-subtext">Compensation expectation</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Applied Date</div>
+            <div class="stat-value font-base">{{ application.applied_date|default:"Not set" }}</div>
+            <div class="stat-subtext">Submitted date</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Next Action</div>
+            <div class="stat-value font-base">{{ application.next_action_date|default:"None scheduled" }}</div>
+            <div class="stat-subtext">Pending deadline / round</div>
+        </div>
+    </div>
+
+    <!-- Resume Version & Job Description Details -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h2>Opportunity Details</h2>
+        </div>
+        <div class="card-body">
+            <div class="detail-row mb-3">
+                <strong>Linked Resume Version:</strong>
+                {% if application.resume_version %}
+                    <span class="badge badge-info">{{ application.resume_version.label }}</span>
+                    {% if application.resume_version.target_role %}
+                        <span class="text-muted">({{ application.resume_version.target_role }})</span>
+                    {% endif %}
+                {% else %}
+                    <span class="text-muted">No specific resume linked</span>
+                {% endif %}
+            </div>
+
+            {% if application.job_url %}
+                <div class="detail-row mb-3">
+                    <strong>Job Posting URL:</strong>
+                    <a href="{{ application.job_url }}" target="_blank" rel="noopener noreferrer" class="external-link">
+                        {{ application.job_url }} &nearr;
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if application.job_description %}
+                <div class="detail-section mt-3">
+                    <strong>Job Description / Requirements:</strong>
+                    <div class="description-box mt-2">{{ application.job_description|linebreaks }}</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Two-Column Layout: Interview Rounds Timeline & Notes -->
+    <div class="dashboard-columns mb-4">
+        <!-- Interview Rounds Column -->
+        <div class="card flex-1">
+            <div class="card-header d-flex justify-between align-center">
+                <h2>Interview Rounds ({{ rounds.count }})</h2>
+            </div>
+            <div class="card-body">
+                {% if rounds %}
+                    <div class="rounds-timeline mb-4">
+                        {% for round in rounds %}
+                            <div class="timeline-item">
+                                <div class="timeline-header">
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="round-badge">#{{ round.round_number }}</span>
+                                        <strong>{{ round.get_round_type_display }}</strong>
+                                        <span class="badge badge-{{ round.status|lower }}">{{ round.status }}</span>
+                                    </div>
+                                    <div class="timeline-actions">
+                                        <a href="{% url 'tracker:round_update' pk=round.pk %}" class="btn-action">Edit</a>
+                                        <a href="{% url 'tracker:round_delete' pk=round.pk %}" class="btn-action text-danger">Delete</a>
+                                    </div>
+                                </div>
+                                <div class="timeline-meta mt-1 text-muted text-sm">
+                                    <span>Scheduled: <strong>{{ round.scheduled_at|date:"M d, Y H:i" }}</strong> (UTC)</span>
+                                    {% if round.interviewer_name %}
+                                        <span> &bull; Interviewer: {{ round.interviewer_name }}</span>
+                                    {% endif %}
+                                    {% if round.self_rating %}
+                                        <span> &bull; Self Rating: <strong>{{ round.self_rating }}/5</strong></span>
+                                    {% endif %}
+                                </div>
+                                {% if round.notes %}
+                                    <div class="timeline-notes mt-2">{{ round.notes|linebreaks }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">No interview rounds scheduled yet.</p>
+                {% endif %}
+
+                <!-- Inline Add Round Form -->
+                <div class="inline-form-box mt-4">
+                    <h3>Schedule / Log Next Round</h3>
+                    <form method="post" action="{% url 'tracker:round_create' app_pk=application.pk %}" class="mt-3">
+                        {% csrf_token %}
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.round_number.id_for_label }}">Round Number</label>
+                                {{ round_form.round_number }}
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.round_type.id_for_label }}">Round Type</label>
+                                {{ round_form.round_type }}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.scheduled_at.id_for_label }}">Scheduled At</label>
+                                {{ round_form.scheduled_at }}
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.status.id_for_label }}">Status</label>
+                                {{ round_form.status }}
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.interviewer_name.id_for_label }}">Interviewer (Optional)</label>
+                                {{ round_form.interviewer_name }}
+                            </div>
+                            <div class="form-group col-half">
+                                <label for="{{ round_form.self_rating.id_for_label }}">Self Rating (Optional)</label>
+                                {{ round_form.self_rating }}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ round_form.notes.id_for_label }}">Notes / Questions</label>
+                            {{ round_form.notes }}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-sm">+ Save Interview Round</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Column -->
+        <div class="card flex-1">
+            <div class="card-header">
+                <h2>Application Notes ({{ notes.count }})</h2>
+            </div>
+            <div class="card-body">
+                {% if notes %}
+                    <div class="notes-list mb-4">
+                        {% for note in notes %}
+                            <div class="note-card mb-3">
+                                <div class="d-flex justify-between align-center">
+                                    <strong class="note-title">{{ note.title }}</strong>
+                                    <div class="d-flex align-center gap-2">
+                                        <span class="text-muted text-xs">{{ note.created_at|date:"M d, Y H:i" }}</span>
+                                        <form method="post" action="{% url 'tracker:note_delete' pk=note.pk %}" class="inline-form" onsubmit="return confirm('Delete this note?');">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-link-danger text-xs">Delete</button>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="note-body mt-2 text-sm">{{ note.body|linebreaks }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center py-4">No notes added for this application yet.</p>
+                {% endif %}
+
+                <!-- Inline Add Note Form -->
+                <div class="inline-form-box mt-4">
+                    <h3>Add Application Note</h3>
+                    <form method="post" action="{% url 'tracker:note_create' app_pk=application.pk %}" class="mt-3">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="{{ note_form.title.id_for_label }}">Title</label>
+                            {{ note_form.title }}
+                        </div>
+                        <div class="form-group">
+                            <label for="{{ note_form.body.id_for_label }}">Content</label>
+                            {{ note_form.body }}
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">+ Save Note</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

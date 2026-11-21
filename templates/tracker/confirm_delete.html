@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirm Delete - PlacementTracker{% endblock %}
+
+{% block content %}
+<div class="container container-sm">
+    <div class="card">
+        <div class="card-header">
+            <h2>Confirm Deletion</h2>
+        </div>
+        <div class="card-body">
+            <p class="mb-3">Are you sure you want to delete the following {{ item_type|lower }}?</p>
+
+            <div class="alert alert-warning mb-4">
+                <strong>{{ item_type }}:</strong> {{ item_title }}
+                {% if extra_warning %}
+                    <p class="mt-2 text-sm text-danger"><strong>Warning:</strong> {{ extra_warning }}</p>
+                {% endif %}
+            </div>
+
+            <p class="text-muted text-sm mb-4">This action is permanent and cannot be undone.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger">Yes, Delete {{ item_type }}</button>
+                    <a href="{{ cancel_url }}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

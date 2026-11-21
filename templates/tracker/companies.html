@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Target Companies - PlacementTracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div>
+            <h1>Target Companies</h1>
+            <p class="text-muted">Manage the organizations and employers in your recruitment radar</p>
+        </div>
+        <div>
+            <a href="{% url 'tracker:company_create' %}" class="btn btn-primary">+ Add Company</a>
+        </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'tracker:company_list' %}" class="d-flex gap-2">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search company by name..." class="form-input" style="max-width: 400px;">
+                <button type="submit" class="btn btn-primary btn-sm">Search</button>
+                {% if search_query %}
+                    <a href="{% url 'tracker:company_list' %}" class="btn btn-secondary btn-sm">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- Companies Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if companies %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Company Name</th>
+                                <th>Industry</th>
+                                <th>Location</th>
+                                <th>Website</th>
+                                <th>Applications</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in companies %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ company.name }}</strong>
+                                        {% if company.notes %}
+                                            <div class="text-sub">{{ company.notes|truncatechars:60 }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ company.industry|default:"—" }}</td>
+                                    <td>{{ company.location|default:"—" }}</td>
+                                    <td>
+                                        {% if company.website %}
+                                            <a href="{{ company.website }}" target="_blank" rel="noopener noreferrer" class="external-link">
+                                                Visit &nearr;
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'tracker:application_list' %}?q={{ company.name }}" class="badge badge-info">
+                                            {{ company.application_count }} application{{ company.application_count|pluralize }}
+                                        </a>
+                                    </td>
+                                    <td class="table-actions">
+                                        <a href="{% url 'tracker:application_create' %}?company={{ company.pk }}" class="btn-action font-semibold text-primary" title="Add Application">+ Apply</a>
+                                        <a href="{% url 'tracker:company_update' pk=company.pk %}" class="btn-action" title="Edit">Edit</a>
+                                        <a href="{% url 'tracker:company_delete' pk=company.pk %}" class="btn-action text-danger" title="Delete">Delete</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state py-5 text-center">
+                    <p class="empty-title">No companies found</p>
+                    <p class="text-muted mb-4">
+                        {% if search_query %}
+                            No companies match "{{ search_query }}". Try clearing the search.
+                        {% else %}
+                            You haven't registered any target employers yet. Add your first company to start tracking applications.
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'tracker:company_create' %}" class="btn btn-primary">+ Add First Company</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

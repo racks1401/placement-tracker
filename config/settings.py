@@ -157,6 +157,9 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Silence URLField default scheme transitional warning
+FORMS_URLFIELD_ASSUME_HTTPS = True
+
 # Authentication URLs & redirects
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'tracker:dashboard'

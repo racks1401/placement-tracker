@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}PlacementTracker - Job & Internship Pipeline{% endblock %}</title>
+    <title>{% block title %}PlacementTracker - Recruitment Pipeline Manager{% endblock %}</title>
     <!-- Strictly local CSS for offline execution -->
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
@@ -18,7 +18,10 @@
             <nav class="nav-links">
                 {% if user.is_authenticated %}
                     <a href="{% url 'tracker:dashboard' %}" class="nav-item">Dashboard</a>
-                    <a href="{% url 'accounts:profile' %}" class="nav-item">Preferences ({{ user.username }})</a>
+                    <a href="{% url 'tracker:application_list' %}" class="nav-item">Applications</a>
+                    <a href="{% url 'tracker:company_list' %}" class="nav-item">Companies</a>
+                    <a href="{% url 'tracker:resume_list' %}" class="nav-item">Resumes</a>
+                    <a href="{% url 'accounts:profile' %}" class="nav-item">Profile ({{ user.username }})</a>
                     <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">
                         {% csrf_token %}
                         <button type="submit" class="nav-button-link">Sign Out</button>

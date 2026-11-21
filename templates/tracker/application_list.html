@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Job Applications - PlacementTracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div>
+            <h1>Job Applications</h1>
+            <p class="text-muted">Track and manage every opening across your recruitment pipeline</p>
+        </div>
+        <div>
+            {% if has_companies %}
+                <a href="{% url 'tracker:application_create' %}" class="btn btn-primary">+ Add Application</a>
+            {% else %}
+                <a href="{% url 'tracker:company_create' %}" class="btn btn-primary">+ Add Company First</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" action="{% url 'tracker:application_list' %}" class="filter-form">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="id_q" class="filter-label">Search</label>
+                        <input type="text" name="q" id="id_q" value="{{ search_query }}" placeholder="Role, company, location..." class="form-input form-input-sm">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="id_status" class="filter-label">Status</label>
+                        <select name="status" id="id_status" class="form-input form-input-sm">
+                            <option value="">All Statuses</option>
+                            {% for val, label in status_choices %}
+                                <option value="{{ val }}" {% if selected_status == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="id_source" class="filter-label">Source</label>
+                        <select name="source" id="id_source" class="form-input form-input-sm">
+                            <option value="">All Sources</option>
+                            {% for val, label in source_choices %}
+                                <option value="{{ val }}" {% if selected_source == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="id_work_mode" class="filter-label">Work Mode</label>
+                        <select name="work_mode" id="id_work_mode" class="form-input form-input-sm">
+                            <option value="">All Modes</option>
+                            {% for val, label in work_mode_choices %}
+                                <option value="{{ val }}" {% if selected_work_mode == val %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="id_sort" class="filter-label">Sort By</label>
+                        <select name="sort" id="id_sort" class="form-input form-input-sm">
+                            <option value="updated_desc" {% if selected_sort == 'updated_desc' %}selected{% endif %}>Recently Updated</option>
+                            <option value="applied_desc" {% if selected_sort == 'applied_desc' %}selected{% endif %}>Applied Date (Newest)</option>
+                            <option value="ctc_desc" {% if selected_sort == 'ctc_desc' %}selected{% endif %}>Expected CTC (Highest)</option>
+                            <option value="role_asc" {% if selected_sort == 'role_asc' %}selected{% endif %}>Role Title (A-Z)</option>
+                            <option value="company_asc" {% if selected_sort == 'company_asc' %}selected{% endif %}>Company Name (A-Z)</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+                        <a href="{% url 'tracker:application_list' %}" class="btn btn-secondary btn-sm">Reset</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Table -->
+    <div class="card">
+        <div class="card-body p-0">
+            {% if applications %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Source</th>
+                                <th>Work Mode</th>
+                                <th>Expected CTC</th>
+                                <th>Applied Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in applications %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'tracker:application_detail' pk=app.pk %}" class="table-link font-semibold">
+                                            {{ app.company.name }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'tracker:application_detail' pk=app.pk %}" class="table-link">
+                                            {{ app.role_title }}
+                                        </a>
+                                        {% if app.location %}
+                                            <div class="text-sub">{{ app.location }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-{{ app.status|lower }}">{{ app.status }}</span>
+                                    </td>
+                                    <td>{{ app.source }}</td>
+                                    <td>{{ app.get_work_mode_display }}</td>
+                                    <td>
+                                        {% if app.expected_ctc_lpa %}
+                                            ₹{{ app.expected_ctc_lpa }} LPA
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ app.applied_date|default:"—" }}</td>
+                                    <td class="table-actions">
+                                        <a href="{% url 'tracker:application_detail' pk=app.pk %}" class="btn-action" title="View details">View</a>
+                                        <a href="{% url 'tracker:application_update' pk=app.pk %}" class="btn-action" title="Edit">Edit</a>
+                                        <a href="{% url 'tracker:application_delete' pk=app.pk %}" class="btn-action text-danger" title="Delete">Delete</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <div class="pagination-bar">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&status={{ selected_status }}&source={{ selected_source }}&work_mode={{ selected_work_mode }}&sort={{ selected_sort }}" class="btn btn-secondary btn-sm">&larr; Previous</a>
+                        {% endif %}
+
+                        <span class="page-indicator">
+                            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }} ({{ total_count }} items)
+                        </span>
+
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&status={{ selected_status }}&source={{ selected_source }}&work_mode={{ selected_work_mode }}&sort={{ selected_sort }}" class="btn btn-secondary btn-sm">Next &rarr;</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <div class="empty-state py-5 text-center">
+                    <p class="empty-title">No applications found</p>
+                    <p class="text-muted mb-4">
+                        {% if search_query or selected_status or selected_source or selected_work_mode %}
+                            No job applications match your active filters. Try resetting the filters.
+                        {% else %}
+                            You haven't added any job applications yet.
+                        {% endif %}
+                    </p>
+                    {% if has_companies %}
+                        <a href="{% url 'tracker:application_create' %}" class="btn btn-primary">+ Add First Application</a>
+                    {% else %}
+                        <a href="{% url 'tracker:company_create' %}" class="btn btn-primary">+ Add First Company</a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

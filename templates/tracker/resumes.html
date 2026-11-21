@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Resume Versions - PlacementTracker{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <div>
+            <h1>Resume Versions</h1>
+            <p class="text-muted">Register and tailor different resume variations for different job roles</p>
+        </div>
+        <div>
+            <a href="{% url 'tracker:resume_create' %}" class="btn btn-primary">+ Add Resume Version</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body p-0">
+            {% if resumes %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Label / Version</th>
+                                <th>Target Role</th>
+                                <th>Default</th>
+                                <th>Applications Linked</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for resume in resumes %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ resume.label }}</strong>
+                                        {% if resume.notes %}
+                                            <div class="text-sub">{{ resume.notes|truncatechars:70 }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ resume.target_role|default:"General" }}</td>
+                                    <td>
+                                        {% if resume.is_default %}
+                                            <span class="badge badge-success">Default</span>
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-info">
+                                            {{ resume.application_count }} application{{ resume.application_count|pluralize }}
+                                        </span>
+                                    </td>
+                                    <td>{{ resume.created_at|date:"M d, Y" }}</td>
+                                    <td class="table-actions">
+                                        <a href="{% url 'tracker:resume_update' pk=resume.pk %}" class="btn-action" title="Edit">Edit</a>
+                                        <a href="{% url 'tracker:resume_delete' pk=resume.pk %}" class="btn-action text-danger" title="Delete">Delete</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state py-5 text-center">
+                    <p class="empty-title">No resume versions found</p>
+                    <p class="text-muted mb-4">
+                        Register tailored versions (e.g. Backend, Frontend, Data Science) to track which version converts best.
+                    </p>
+                    <a href="{% url 'tracker:resume_create' %}" class="btn btn-primary">+ Add First Resume Version</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
