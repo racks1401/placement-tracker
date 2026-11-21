@@ -25,6 +25,26 @@ def other_user():
 
 
 @pytest.mark.django_db
+def test_unauthenticated_redirects_across_endpoints():
+    """Unauthenticated access across all tracker routes must redirect to login."""
+    client = Client()
+    protected_urls = [
+        reverse('tracker:dashboard'),
+        reverse('tracker:application_list'),
+        reverse('tracker:application_create'),
+        reverse('tracker:company_list'),
+        reverse('tracker:company_create'),
+        reverse('tracker:resume_list'),
+        reverse('tracker:resume_create'),
+    ]
+
+    for url in protected_urls:
+        res = client.get(url)
+        assert res.status_code == 302
+        assert '/accounts/login/' in res.url
+
+
+@pytest.mark.django_db
 def test_job_application_form_dropdown_isolation_and_ctc_validation(auth_client, other_user):
     _, user = auth_client
     c_user = Company.objects.create(owner=user, name='Target Corp')
@@ -123,23 +143,25 @@ def test_application_crud_lifecycle(auth_client):
 def test_cross_tenant_404_protection_on_crud_views(auth_client, other_user):
     client, user = auth_client
 
-    # Other user creates an application
+    # Other user creates an application, company, resume
     other_company = Company.objects.create(owner=other_user, name='OtherCo')
     other_app = JobApplication.objects.create(
         owner=other_user,
         company=other_company,
         role_title='Secret Role',
     )
+    other_resume = ResumeVersion.objects.create(owner=other_user, label='Confidential Resume')
 
-    # Logged-in user tries to view, edit, delete other user's application
-    detail_res = client.get(reverse('tracker:application_detail', kwargs={'pk': other_app.pk}))
-    assert detail_res.status_code == 404
+    # Logged-in user tries to view, edit, delete other user's application -> 404
+    assert client.get(reverse('tracker:application_detail', kwargs={'pk': other_app.pk})).status_code == 404
+    assert client.get(reverse('tracker:application_update', kwargs={'pk': other_app.pk})).status_code == 404
+    assert client.post(reverse('tracker:application_delete', kwargs={'pk': other_app.pk})).status_code == 404
 
-    edit_res = client.get(reverse('tracker:application_update', kwargs={'pk': other_app.pk}))
-    assert edit_res.status_code == 404
-
-    delete_res = client.post(reverse('tracker:application_delete', kwargs={'pk': other_app.pk}))
-    assert delete_res.status_code == 404
+    # Other user's company and resume -> 404
+    assert client.get(reverse('tracker:company_update', kwargs={'pk': other_company.pk})).status_code == 404
+    assert client.post(reverse('tracker:company_delete', kwargs={'pk': other_company.pk})).status_code == 404
+    assert client.get(reverse('tracker:resume_update', kwargs={'pk': other_resume.pk})).status_code == 404
+    assert client.post(reverse('tracker:resume_delete', kwargs={'pk': other_resume.pk})).status_code == 404
 
 
 @pytest.mark.django_db
@@ -176,11 +198,112 @@ def test_rounds_and_notes_endpoints(auth_client, other_user):
     note_obj = app.notes.first()
     assert note_obj.title == 'Salary Discussion'
 
-    # Other user cannot delete this round or note
+    # Other user cannot add round to or delete this round/note -> 404
     other_client = Client()
     other_client.login(username='other', password='password123')
-    del_round_other = other_client.post(reverse('tracker:round_delete', kwargs={'pk': round_obj.pk}))
-    assert del_round_other.status_code == 404
+    assert other_client.post(reverse('tracker:round_create', kwargs={'app_pk': app.pk}), round_data).status_code == 404
+    assert other_client.post(reverse('tracker:round_delete', kwargs={'pk': round_obj.pk})).status_code == 404
+    assert other_client.post(reverse('tracker:note_delete', kwargs={'pk': note_obj.pk})).status_code == 404
 
-    del_note_other = other_client.post(reverse('tracker:note_delete', kwargs={'pk': note_obj.pk}))
-    assert del_note_other.status_code == 404
+
+@pytest.mark.django_db
+def test_application_list_view_filtering_and_search(auth_client):
+    client, user = auth_client
+    c1 = Company.objects.create(owner=user, name='Adobe')
+    c2 = Company.objects.create(owner=user, name='Salesforce')
+
+    JobApplication.objects.create(
+        owner=user,
+        company=c1,
+        role_title='Platform Engineer',
+        status=JobApplication.StatusChoices.APPLIED,
+        source=JobApplication.SourceChoices.REFERRAL,
+    )
+    JobApplication.objects.create(
+        owner=user,
+        company=c2,
+        role_title='Security Architect',
+        status=JobApplication.StatusChoices.OFFER,
+        source=JobApplication.SourceChoices.LINKEDIN,
+    )
+
+    # Filter by status
+    res_status = client.get(reverse('tracker:application_list'), {'status': 'Applied'})
+    assert res_status.status_code == 200
+    assert len(res_status.context['applications']) == 1
+    assert res_status.context['applications'][0].role_title == 'Platform Engineer'
+
+    # Filter by search query
+    res_search = client.get(reverse('tracker:application_list'), {'q': 'Security'})
+    assert res_search.status_code == 200
+    assert len(res_search.context['applications']) == 1
+    assert res_search.context['applications'][0].role_title == 'Security Architect'
+
+
+@pytest.mark.django_db
+def test_dashboard_view_metric_accuracy(auth_client):
+    client, user = auth_client
+    comp = Company.objects.create(owner=user, name='Oracle')
+    JobApplication.objects.create(
+        owner=user,
+        company=comp,
+        role_title='Cloud SWE',
+        status=JobApplication.StatusChoices.OFFER,
+        expected_ctc_lpa=Decimal('28.00'),
+    )
+
+    response = client.get(reverse('tracker:dashboard'))
+    assert response.status_code == 200
+    assert response.context['total_applications'] == 1
+    assert response.context['offers_count'] == 1
+    assert response.context['total_companies'] == 1
+    assert response.context['avg_expected_ctc'] == Decimal('28.00')
+
+
+@pytest.mark.django_db
+def test_company_and_resume_crud_views(auth_client):
+    client, user = auth_client
+
+    # Create Company
+    res_c_create = client.post(reverse('tracker:company_create'), {
+        'name': 'Databricks',
+        'industry': 'AI / Big Data',
+        'location': 'San Francisco',
+        'website': 'https://databricks.com',
+        'notes': 'Great engineering culture',
+    })
+    assert res_c_create.status_code == 302
+    company = Company.objects.get(owner=user, name='Databricks')
+
+    # Update Company
+    res_c_update = client.post(reverse('tracker:company_update', kwargs={'pk': company.pk}), {
+        'name': 'Databricks Inc',
+        'industry': 'AI / Big Data',
+        'location': 'San Francisco, CA',
+        'website': 'https://databricks.com',
+        'notes': 'Updated notes',
+    })
+    assert res_c_update.status_code == 302
+    company.refresh_from_db()
+    assert company.name == 'Databricks Inc'
+
+    # Create Resume
+    res_r_create = client.post(reverse('tracker:resume_create'), {
+        'label': 'ML Ops v1',
+        'target_role': 'Machine Learning Engineer',
+        'plain_text': 'PyTorch, MLflow, Ray experience',
+        'is_default': True,
+    })
+    assert res_r_create.status_code == 302
+    resume = ResumeVersion.objects.get(owner=user, label='ML Ops v1')
+    assert resume.is_default is True
+
+    # Delete Resume
+    res_r_del = client.post(reverse('tracker:resume_delete', kwargs={'pk': resume.pk}))
+    assert res_r_del.status_code == 302
+    assert not ResumeVersion.objects.filter(pk=resume.pk).exists()
+
+    # Delete Company
+    res_c_del = client.post(reverse('tracker:company_delete', kwargs={'pk': company.pk}))
+    assert res_c_del.status_code == 302
+    assert not Company.objects.filter(pk=company.pk).exists()
